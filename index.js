@@ -39,7 +39,9 @@ const printImage = async (pictureUrl) => {
 
             let encoder = new EscPosEncoder();
 
-            const logo = await getImage({ pictureUrl: 'https://res.cloudinary.com/dkbuiehgq/image/upload/v1713989859/session_1_zqo8jz.png', width: LOGO_WIDTH, height: LOGO_HEIGHT });
+            // const logo = await getImage({ pictureUrl: 'https://res.cloudinary.com/dkbuiehgq/image/upload/v1713989859/session_1_zqo8jz.png', width: LOGO_WIDTH, height: LOGO_HEIGHT });
+            const logo = await getImage({ pictureUrl: 'https://res.cloudinary.com/dkbuiehgq/image/upload/v1724450284/marie_30_abaenj.jpg', width: LOGO_WIDTH, height: LOGO_HEIGHT });
+
             const image = await getImage({ pictureUrl, width: PICTURE_WIDTH, height: PICTURE_HEIGHT, rotate: 90 });
             const date = new Date();
             const dateString = date.toLocaleString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
@@ -59,19 +61,6 @@ const printImage = async (pictureUrl) => {
                 .newline()
                 .cut()
                 .encode();
-
-
-            // let result = encoder
-            //     .initialize()
-            //     .align('center')
-            //     .qrcode('https://flyprint.vercel.app/ba620907-b377-4880-bedf-3e515722149e', 2, 8)
-            //     .newline()
-            //     .newline()
-            //     .newline()
-            //     .newline()
-            //     .newline()
-            //     .cut()
-            //     .encode();
 
             client.write(result, () => {
                 client.end(() => {
