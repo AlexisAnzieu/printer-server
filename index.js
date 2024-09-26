@@ -33,7 +33,7 @@ const printImage = async (pictureUrl) => {
     const client = new net.Socket();
     console.log("Created socket");
 
-    await new Promise((resolve, reject) => {
+    return await new Promise((resolve, reject) => {
         client.connect(PRINTER_PORT, PRINTER_IP, async function () {
             console.log("Connected to the printer");
 
@@ -81,9 +81,14 @@ const printImage = async (pictureUrl) => {
             });
 
         });
+
+        client.on('error', (error) => {
+            reject(`Error connecting to the printer: ${error}`);
+        });
+
+
     });
 
-    console.log("Data sent and connection closed");
 }
 
 app.get('/print', async (req, res) => {
@@ -92,12 +97,17 @@ app.get('/print', async (req, res) => {
     const { pictureUrl } = req.query
 
     if (!pictureUrl) {
-        return res.send('invalid pictureUrl')
+        return res.status(400).send({ error: 'Missing pictureUrl' })
     }
 
-    await printImage(pictureUrl);
+    try {
 
-    res.send('printed')
+        await printImage(pictureUrl);
+        res.send('printed')
+
+    } catch (error) {
+        res.status(500).send({ error: error })
+    }
 })
 
 app.listen(port, () => {
