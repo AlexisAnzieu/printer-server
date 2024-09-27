@@ -254,10 +254,16 @@ app.get("/print", async (req, res) => {
 
     try {
         const result = await printImage(pictureUrl, "usb");
-        console.log(result);
-        res.send(result);
+        res.json({
+            status: "success",
+            message: "Print job completed successfully",
+            result: result
+        });
     } catch (error) {
-        res.status(500).send({ error: error.message });
+        res.status(500).json({
+            status: "error",
+            message: error.message
+        });
     }
 });
 
