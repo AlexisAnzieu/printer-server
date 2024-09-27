@@ -1,5 +1,5 @@
 import express from "express";
-import * as net from "net";
+import net from "net";
 import EscPosEncoder from "esc-pos-encoder";
 import sharp from "sharp";
 import { Image } from "canvas";
@@ -105,14 +105,14 @@ function claimInterface(iface: usb.Interface) {
 
 async function transferToEndpoint(
   endpoint: usb.OutEndpoint,
-  result: any,
+  result: Uint8Array,
   iface: usb.Interface,
   printer: usb.usb.Device
 ) {
   console.log("Printing...");
 
   return new Promise((resolve, reject) => {
-    endpoint.transfer(result, (error: any) => {
+    endpoint.transfer(result as Buffer, (error: any) => {
       if (error) {
         console.error("Print failed", error);
         reject("Print failed");
@@ -241,7 +241,7 @@ async function printWithLAN(pictureUrl: any) {
           throw new Error("Failed to encode print data");
         }
 
-        client.write(result as any, () => {
+        client.write(result, () => {
           client.end(() => {
             console.log("Connection closed");
             resolve("done");
