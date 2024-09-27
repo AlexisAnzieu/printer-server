@@ -12,7 +12,7 @@
   "license": "ISC",
   "dependencies": {
     "canvas": "^2.11.2",
-    "esc-pos-encoder": "^2.0.1",
+    "esc-pos-encoder": "^3.0.0",
     "express": "^4.19.2",
     "net": "^1.0.2",
     "sharp": "^0.33.3",

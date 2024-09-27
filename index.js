@@ -6,6 +6,7 @@ import { Image } from "canvas";
 import usb from "usb";
 import { exec } from "child_process";
 import util from "util";
+import { createCanvas } from 'canvas';
 
 const execCommand = util.promisify(exec);
 
@@ -13,12 +14,7 @@ const app = express();
 app.use(express.urlencoded({ extended: true }));
 
 const port = 9100;
-const PICTURE_WIDTH = 528;
-const PICTURE_HEIGHT = 712;
-const LOGO_WIDTH = 200;
-const LOGO_HEIGHT = 200;
-const PRINTER_IP = "192.168.0.87";
-const PRINTER_PORT = 9100;
+const QR_CODE_URL = 'https://flyprint.vercel.app/nath'
 
 function initializePrinter() {
     console.log("Init printer");
@@ -36,19 +32,20 @@ function initializePrinter() {
 }
 
 async function encodePrintData({ pictureUrl }) {
-    let encoder = new EscPosEncoder();
+    const PICTURE_WIDTH = 528;
+    const PICTURE_HEIGHT = 712;
+    const LOGO_WIDTH = 200;
+    const LOGO_HEIGHT = 200;
+
+    let encoder = new EscPosEncoder({
+        createCanvas
+    });
     try {
         const logo = await getImage({
             pictureUrl:
                 "https://res.cloudinary.com/dkbuiehgq/image/upload/v1727450557/nath_4_f1no3e.png",
             width: LOGO_WIDTH,
             height: LOGO_HEIGHT,
-        });
-        const image = await getImage({
-            pictureUrl,
-            width: PICTURE_WIDTH,
-            height: PICTURE_HEIGHT,
-            rotate: 90,
         });
         const date = new Date();
         const dateString = date.toLocaleString("en-GB", {
@@ -59,17 +56,23 @@ async function encodePrintData({ pictureUrl }) {
             minute: "2-digit",
         });
 
-        return encoder
+        encoder = encoder
             .initialize()
-            .align("center")
-            .image(logo, LOGO_WIDTH, LOGO_HEIGHT, "atkinson")
-            .newline()
-            .image(image, PICTURE_WIDTH, PICTURE_HEIGHT, "atkinson")
+            .align('center')
+            .image(logo, LOGO_WIDTH, LOGO_HEIGHT, 'atkinson')
+            .newline();
+
+        if (pictureUrl) {
+            const image = await getImage({ pictureUrl, width: PICTURE_WIDTH, height: PICTURE_HEIGHT, rotate: 90 });
+            encoder = encoder.image(image, PICTURE_WIDTH, PICTURE_HEIGHT, 'atkinson');
+        } else {
+            encoder = encoder.qrcode(QR_CODE_URL, 2, 8, 'h');
+        }
+
+        return encoder
             .newline()
             .line(dateString)
             .line("Auberge la Montagne Coupee - Quebec")
-            .newline()
-            .newline()
             .newline()
             .newline()
             .newline()
@@ -202,6 +205,8 @@ async function getImage({ pictureUrl, width, height, rotate = 0 }) {
 }
 
 async function printWithLAN(pictureUrl) {
+    const PRINTER_IP = "192.168.0.87";
+    const PRINTER_PORT = 9100;
     const client = new net.Socket();
     console.log("Created socket");
 
@@ -277,7 +282,7 @@ app.get("/", (req, res) => {
     `);
 });
 
-app.get("/printer", (req, res) => {
+app.get("/qr", (req, res) => {
     try {
         const printer = getPrinter();
         res.send(printer);
