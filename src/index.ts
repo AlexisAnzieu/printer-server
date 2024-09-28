@@ -2,11 +2,12 @@ import express from "express";
 import net from "net";
 import EscPosEncoder from "esc-pos-encoder";
 import sharp from "sharp";
-import { Image } from "canvas";
+import { Image, createCanvas } from "canvas";
 import * as usb from "usb";
 import { exec } from "child_process";
 import util from "util";
-import { createCanvas } from "canvas";
+import path from "path";
+import fs from "fs";
 
 const execCommand = util.promisify(exec);
 
@@ -31,7 +32,13 @@ function initializePrinter() {
   return printer;
 }
 
-async function encodePrintData({ pictureUrl }: { pictureUrl?: string }) {
+async function encodePrintData({
+  pictureUrl,
+  texts,
+}: {
+  pictureUrl?: string;
+  texts?: string[];
+}) {
   const PICTURE_WIDTH = 528;
   const PICTURE_HEIGHT = 712;
   const LOGO_WIDTH = 200;
@@ -44,7 +51,7 @@ async function encodePrintData({ pictureUrl }: { pictureUrl?: string }) {
   try {
     const logo = await getImage({
       pictureUrl:
-        "https://res.cloudinary.com/dkbuiehgq/image/upload/v1727450557/nath_4_f1no3e.png",
+        "https://res.cloudinary.com/dkbuiehgq/image/upload/v1727532228/resto_iu7mda.jpg",
       width: LOGO_WIDTH,
       height: LOGO_HEIGHT,
     });
@@ -71,6 +78,8 @@ async function encodePrintData({ pictureUrl }: { pictureUrl?: string }) {
         rotate: 90,
       });
       encoder = encoder.image(image, PICTURE_WIDTH, PICTURE_HEIGHT, "atkinson");
+    } else if (texts) {
+      texts.map((text) => encoder.line(text));
     } else {
       encoder = encoder.qrcode(QR_CODE_URL, 2, 8, "h");
     }
@@ -125,13 +134,19 @@ async function transferToEndpoint(
   });
 }
 
-async function printWithUSB({ pictureUrl }: { pictureUrl?: string }) {
+async function printWithUSB({
+  pictureUrl,
+  texts,
+}: {
+  pictureUrl?: string;
+  texts?: string[];
+}) {
   const printer = initializePrinter();
   if (!printer) {
     throw new Error("Failed to initialize printer");
   }
 
-  let result = await encodePrintData({ pictureUrl });
+  let result = await encodePrintData({ pictureUrl, texts });
   if (!result) {
     printer.close();
     throw new Error("Failed to encode print data");
@@ -264,23 +279,36 @@ async function printWithLAN(pictureUrl: any) {
   console.log("Data sent and connection closed");
 }
 
-async function printImage(method: string, pictureUrl?: string) {
+async function printImage({
+  method,
+  pictureUrl,
+  texts,
+}: {
+  method: string;
+  pictureUrl?: string;
+  texts?: string[];
+}) {
   if (method === "lan") {
     return await printWithLAN(pictureUrl);
   } else {
-    return await printWithUSB({ pictureUrl });
+    return await printWithUSB({ pictureUrl, texts });
   }
 }
 
 app.get("/print", async (req, res) => {
   console.log("Printing");
 
-  const { pictureUrl } = req.query as {
-    pictureUrl: string;
+  const { pictureUrl, texts } = req.query as {
+    pictureUrl?: string;
+    texts?: string;
   };
 
   try {
-    const result = await printImage("usb", pictureUrl);
+    const result = await printImage({
+      method: "usb",
+      pictureUrl,
+      texts: texts?.split(","),
+    });
     res.json({
       status: "success",
       message: "Print job completed successfully",
@@ -315,13 +343,15 @@ app.get("/", (req, res) => {
     `);
 });
 
-app.get("/qr", (req, res) => {
-  try {
-    const printer = getPrinter();
-    res.send(printer);
-  } catch (error: any) {
-    res.status(500).send({ error: error.message });
-  }
+app.get("/menu", (req, res) => {
+  const filePath = path.join(__dirname, "../src/menu.html");
+  fs.readFile(filePath, "utf8", (err, data) => {
+    if (err) {
+      res.status(500).send("Error reading the HTML file");
+      return;
+    }
+    res.send(data);
+  });
 });
 
 // @ts-ignore
