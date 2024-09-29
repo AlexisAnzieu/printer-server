@@ -22,6 +22,12 @@ function initializePrinter() {
   const printer = getPrinter();
 
   try {
+    // for rpi we need to make sure that usb is allowed
+    // cd /etc/udev/rules.d
+    // sudo vi 99-com.rules
+    // add at the top SUBSYSTEM=="usb", ATTR{idVendor}=="0fe6", MODE="0666"
+    // sudo udevadm control --reload-rules
+    // sudo udevadm trigger
     printer.open();
     console.log("printer opened");
   } catch (err) {
@@ -106,9 +112,16 @@ function claimInterface(iface: usb.Interface) {
     console.log("Interface claimed");
     return true;
   } catch (err) {
-    iface.detachKernelDriver();
-    console.error("Failed to claim interface:", err);
-    return false;
+    console.warn("Failed to claim interface on first attempt:", err);
+    try {
+      iface.detachKernelDriver();
+      iface.claim();
+      console.log("Interface claimed after detaching kernel driver");
+      return true;
+    } catch (err) {
+      console.error("Failed to claim interface after detaching kernel driver:", err);
+      return false;
+    }
   }
 }
 
