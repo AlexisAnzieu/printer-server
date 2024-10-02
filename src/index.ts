@@ -320,7 +320,7 @@ async function printImage({
   }
 }
 
-app.get("/print", async (req, res) => {
+app.post("/print", async (req, res) => {
   console.log("Printing");
 
   const { pictureUrl, texts } = req.query as {
