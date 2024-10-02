@@ -18,9 +18,6 @@ const port = 9100;
 const QR_CODE_URL = "https://flyprint.vercel.app/nath";
 
 function initializePrinter() {
-  console.log("Init printer");
-  const printer = getPrinter();
-
   try {
     // for rpi we need to make sure that usb is allowed
     // cd /etc/udev/rules.d
@@ -28,14 +25,36 @@ function initializePrinter() {
     // add at the top SUBSYSTEM=="usb", ATTR{idVendor}=="0fe6", MODE="0666"
     // sudo udevadm control --reload-rules
     // sudo udevadm trigger
+    console.log("Init printer");
+    const printer = getPrinter();
+
     printer.open();
     console.log("printer opened");
+
+    const iface = printer.interfaces?.[0];
+    if (!iface || !claimInterface(iface)) {
+      printer.close();
+      throw new Error("Failed to claim interface");
+    }
+
+    const endpoint = iface.endpoints.find(
+      (ep) => ep.direction === "out"
+    ) as usb.OutEndpoint;
+    if (!endpoint || typeof endpoint.transfer !== "function") {
+      console.error("Invalid endpoint or transfer method");
+      iface.release(() => printer.close());
+      throw new Error("Invalid endpoint or transfer method");
+    }
+
+    return {
+      printer,
+      iface,
+      endpoint,
+    };
   } catch (err) {
     console.error("Failed to open printer:", err);
     return null;
   }
-
-  return printer;
 }
 
 async function encodePrintData({
@@ -119,22 +138,30 @@ function claimInterface(iface: usb.Interface) {
       console.log("Interface claimed after detaching kernel driver");
       return true;
     } catch (err) {
-      console.error("Failed to claim interface after detaching kernel driver:", err);
+      console.error(
+        "Failed to claim interface after detaching kernel driver:",
+        err
+      );
       return false;
     }
   }
 }
 
-async function transferToEndpoint(
-  endpoint: usb.OutEndpoint,
-  result: Uint8Array,
-  iface: usb.Interface,
-  printer: usb.usb.Device
-) {
+async function transferToEndpoint({
+  posPrinter,
+  result,
+}: {
+  posPrinter: {
+    endpoint: usb.OutEndpoint;
+    iface: usb.Interface;
+    printer: usb.usb.Device;
+  };
+  result: Uint8Array;
+}) {
   console.log("Printing...");
 
   return new Promise((resolve, reject) => {
-    endpoint.transfer(result as Buffer, (error: any) => {
+    posPrinter.endpoint.transfer(result as Buffer, (error: any) => {
       if (error) {
         console.error("Print failed", error);
         reject("Print failed");
@@ -142,7 +169,7 @@ async function transferToEndpoint(
         resolve("Print successful");
       }
 
-      iface.release(() => printer.close());
+      posPrinter.iface.release(() => posPrinter.printer.close());
     });
   });
 }
@@ -154,33 +181,18 @@ async function printWithUSB({
   pictureUrl?: string;
   texts?: string[];
 }) {
-  const printer = initializePrinter();
-  if (!printer) {
+  const posPrinter = initializePrinter();
+  if (!posPrinter) {
     throw new Error("Failed to initialize printer");
   }
 
   let result = await encodePrintData({ pictureUrl, texts });
   if (!result) {
-    printer.close();
+    posPrinter.printer.close();
     throw new Error("Failed to encode print data");
   }
 
-  const iface = printer.interfaces?.[0];
-  if (!iface || !claimInterface(iface)) {
-    printer.close();
-    throw new Error("Failed to claim interface");
-  }
-
-  const endpoint = iface.endpoints.find(
-    (ep) => ep.direction === "out"
-  ) as usb.OutEndpoint;
-  if (!endpoint || typeof endpoint.transfer !== "function") {
-    console.error("Invalid endpoint or transfer method");
-    iface.release(() => printer.close());
-    throw new Error("Invalid endpoint or transfer method");
-  }
-
-  return await transferToEndpoint(endpoint, result, iface, printer);
+  return await transferToEndpoint({ posPrinter, result });
 }
 
 async function updateWifiConfig(ssid: any, psk: any) {
