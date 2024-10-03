@@ -347,6 +347,20 @@ app.get("/scan_wifi", async (req, res) => {
   }
 });
 
+app.get("/current_wifi", (req, res) => {
+  exec(
+    "nmcli -t -f active,ssid dev wifi | egrep '^yes' | cut -d: -f2",
+    (error, stdout, stderr) => {
+      if (error) {
+        console.error(`exec error: ${error}`);
+        return res.status(500).json({ error: "Failed to get current SSID" });
+      }
+      const currentSSID = stdout.trim();
+      res.json({ ssid: currentSSID });
+    }
+  );
+});
+
 app.get("/", (req, res) => {
   res.send(`
     <!DOCTYPE html>
@@ -356,6 +370,7 @@ app.get("/", (req, res) => {
     </head>
     <body>
         <h1>WiFi Configuration</h1>
+        <p>Currently connected to: <span id="current-ssid">Loading...</span></p>
         <form method="POST" action="/update_wifi">
             <label for="ssid">WiFi SSID:</label><br>
             <select id="ssid" name="ssid">
@@ -381,7 +396,19 @@ app.get("/", (req, res) => {
                     console.error('Failed to fetch WiFi networks:', error);
                 }
             }
+
+            async function fetchCurrentSSID() {
+                try {
+                    const response = await fetch('/current_wifi');
+                    const data = await response.json();
+                    document.getElementById('current-ssid').textContent = data.ssid;
+                } catch (error) {
+                    console.error('Failed to fetch current SSID:', error);
+                }
+            }
+
             fetchWiFiNetworks();
+            fetchCurrentSSID();
         </script>
     </body>
     </html>
