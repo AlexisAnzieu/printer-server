@@ -362,57 +362,14 @@ app.get("/current_wifi", (req, res) => {
 });
 
 app.get("/", (req, res) => {
-  res.send(`
-    <!DOCTYPE html>
-    <html>
-    <head>
-        <title>WiFi Config</title>
-    </head>
-    <body>
-        <h1>WiFi Configuration</h1>
-        <p>Currently connected to: <span id="current-ssid">Loading...</span></p>
-        <form method="POST" action="/update_wifi">
-            <label for="ssid">WiFi SSID:</label><br>
-            <select id="ssid" name="ssid">
-                <option value="">Select a WiFi network</option>
-            </select><br><br>
-            <label for="psk">WiFi Password:</label><br>
-            <input type="password" id="psk" name="psk"><br><br>
-            <input type="submit" value="Submit">
-        </form>
-        <script>
-            async function fetchWiFiNetworks() {
-                try {
-                    const response = await fetch('/scan_wifi');
-                    const data = await response.json();
-                    const ssidSelect = document.getElementById('ssid');
-                    data.ssids.forEach(ssid => {
-                        const option = document.createElement('option');
-                        option.value = ssid;
-                        option.textContent = ssid;
-                        ssidSelect.appendChild(option);
-                    });
-                } catch (error) {
-                    console.error('Failed to fetch WiFi networks:', error);
-                }
-            }
-
-            async function fetchCurrentSSID() {
-                try {
-                    const response = await fetch('/current_wifi');
-                    const data = await response.json();
-                    document.getElementById('current-ssid').textContent = data.ssid;
-                } catch (error) {
-                    console.error('Failed to fetch current SSID:', error);
-                }
-            }
-
-            fetchWiFiNetworks();
-            fetchCurrentSSID();
-        </script>
-    </body>
-    </html>
-  `);
+  const filePath = path.join(__dirname, "../src/settings.html");
+  fs.readFile(filePath, "utf8", (err, data) => {
+    if (err) {
+      res.status(500).send("Error reading the HTML file");
+      return;
+    }
+    res.send(data);
+  });
 });
 
 app.get("/menu", (req, res) => {
