@@ -197,22 +197,12 @@ async function printWithUSB({
 
 async function updateWifiConfig(ssid: any, psk: any) {
   try {
-    const addNetworkOutput = await execCommand(
-      "sudo wpa_cli -i wlan0 add_network"
-    );
-    const networkId = addNetworkOutput.stdout.trim();
+    await execCommand("sudo nmcli device wifi rescan");
 
     await execCommand(
-      `sudo wpa_cli -i wlan0 set_network ${networkId} ssid '"${ssid}"'`
+      `sudo nmcli dev wifi connect "${ssid}" password "${psk}"`
     );
-    await execCommand(
-      `sudo wpa_cli -i wlan0 set_network ${networkId} psk '"${psk}"'`
-    );
-    await execCommand(`sudo wpa_cli -i wlan0 enable_network ${networkId}`);
-    await execCommand("sudo wpa_cli -i wlan0 save_config");
-    await execCommand("sudo wpa_cli -i wlan0 reconfigure");
-    await execCommand("sudo systemctl restart dhcpcd");
-
+    await execCommand("sudo nmcli connection reload");
     return "WiFi settings updated. Please wait while the Raspberry Pi reconnects.";
   } catch (error) {
     throw new Error(`Failed to update WiFi configuration. ${error}`);
@@ -347,25 +337,55 @@ app.post("/print", async (req, res) => {
   }
 });
 
+app.get("/scan_wifi", async (req, res) => {
+  try {
+    const { stdout } = await execCommand("sudo nmcli -t -f SSID dev wifi");
+    const ssids = stdout.split("\n").filter((ssid) => ssid);
+    res.json({ ssids });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 app.get("/", (req, res) => {
   res.send(`
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <title>WiFi Config</title>
-        </head>
-        <body>
-            <h1>WiFi Configuration</h1>
-            <form method="POST" action="/update_wifi">
-                <label for="ssid">WiFi SSID:</label><br>
-                <input type="text" id="ssid" name="ssid"><br><br>
-                <label for="psk">WiFi Password:</label><br>
-                <input type="password" id="psk" name="psk"><br><br>
-                <input type="submit" value="Submit">
-            </form>
-        </body>
-        </html>
-    `);
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>WiFi Config</title>
+    </head>
+    <body>
+        <h1>WiFi Configuration</h1>
+        <form method="POST" action="/update_wifi">
+            <label for="ssid">WiFi SSID:</label><br>
+            <select id="ssid" name="ssid">
+                <option value="">Select a WiFi network</option>
+            </select><br><br>
+            <label for="psk">WiFi Password:</label><br>
+            <input type="password" id="psk" name="psk"><br><br>
+            <input type="submit" value="Submit">
+        </form>
+        <script>
+            async function fetchWiFiNetworks() {
+                try {
+                    const response = await fetch('/scan_wifi');
+                    const data = await response.json();
+                    const ssidSelect = document.getElementById('ssid');
+                    data.ssids.forEach(ssid => {
+                        const option = document.createElement('option');
+                        option.value = ssid;
+                        option.textContent = ssid;
+                        ssidSelect.appendChild(option);
+                    });
+                } catch (error) {
+                    console.error('Failed to fetch WiFi networks:', error);
+                }
+            }
+            fetchWiFiNetworks();
+        </script>
+    </body>
+    </html>
+  `);
 });
 
 app.get("/menu", (req, res) => {
