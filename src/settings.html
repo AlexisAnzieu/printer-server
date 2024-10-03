@@ -1,20 +1,53 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title>WiFi Config</title>
+    <title>Printer WiFi Config</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link
+      href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css"
+      rel="stylesheet"
+    />
   </head>
-  <body>
-    <h1>WiFi Configuration</h1>
-    <p>Currently connected to: <span id="current-ssid">Loading...</span></p>
-    <form method="POST" action="/update_wifi">
-      <label for="ssid">WiFi SSID:</label><br />
-      <select id="ssid" name="ssid">
-        <option value="">Select a WiFi network</option></select
-      ><br /><br />
-      <label for="psk">WiFi Password:</label><br />
-      <input type="password" id="psk" name="psk" /><br /><br />
-      <input type="submit" value="Submit" />
-    </form>
+  <body class="bg-gray-100 flex items-center justify-center min-h-screen p-4">
+    <div class="bg-white p-8 rounded-lg shadow-lg w-full max-w-md">
+      <h1 class="text-2xl font-bold mb-4">Printer WiFi Configuration</h1>
+      <p class="mb-4">
+        Currently connected to:
+        <span id="current-ssid" class="font-semibold">Loading...</span>
+      </p>
+      <form method="POST" action="/update_wifi" class="space-y-4">
+        <div>
+          <label for="ssid" class="block text-sm font-medium text-gray-700"
+            >WiFi SSID:</label
+          >
+          <select
+            id="ssid"
+            name="ssid"
+            class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+          >
+            <option value="">Select a WiFi network</option>
+          </select>
+        </div>
+        <div>
+          <label for="psk" class="block text-sm font-medium text-gray-700"
+            >WiFi Password:</label
+          >
+          <input
+            type="password"
+            id="psk"
+            name="psk"
+            class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+          />
+        </div>
+        <div>
+          <input
+            type="submit"
+            value="Submit"
+            class="w-full py-2 px-4 bg-indigo-600 text-white font-semibold rounded-md shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+          />
+        </div>
+      </form>
+    </div>
     <script>
       async function fetchWiFiNetworks() {
         try {

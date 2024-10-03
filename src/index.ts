@@ -372,17 +372,6 @@ app.get("/", (req, res) => {
   });
 });
 
-app.get("/menu", (req, res) => {
-  const filePath = path.join(__dirname, "../src/menu.html");
-  fs.readFile(filePath, "utf8", (err, data) => {
-    if (err) {
-      res.status(500).send("Error reading the HTML file");
-      return;
-    }
-    res.send(data);
-  });
-});
-
 // @ts-ignore
 app.post("/update_wifi", async (req, res) => {
   console.log("Updating WiFi configuration");
