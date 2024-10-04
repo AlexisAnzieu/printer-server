@@ -361,17 +361,6 @@ app.get("/current_wifi", (req, res) => {
   );
 });
 
-app.get("/", (req, res) => {
-  const filePath = path.join(__dirname, "../src/settings.html");
-  fs.readFile(filePath, "utf8", (err, data) => {
-    if (err) {
-      res.status(500).send("Error reading the HTML file");
-      return;
-    }
-    res.send(data);
-  });
-});
-
 // @ts-ignore
 app.post("/update_wifi", async (req, res) => {
   console.log("Updating WiFi configuration");
@@ -391,6 +380,8 @@ app.post("/update_wifi", async (req, res) => {
     res.status(500).send({ error: error.message });
   }
 });
+
+app.use("/", express.static(path.join(__dirname, "../public")));
 
 app.listen(port, () => {
   console.log(`Printer server running on port ${port}`);
