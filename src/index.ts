@@ -76,7 +76,7 @@ async function encodePrintData({
   try {
     const logo = await getImage({
       pictureUrl:
-        "https://res.cloudinary.com/dkbuiehgq/image/upload/v1727532228/resto_iu7mda.jpg",
+        "https://res.cloudinary.com/dkbuiehgq/image/upload/v1728693149/sask_esuiyh.jpg",
       width: LOGO_WIDTH,
       height: LOGO_HEIGHT,
     });
@@ -112,7 +112,7 @@ async function encodePrintData({
     return encoder
       .newline()
       .line(dateString)
-      .line("Auberge la Montagne Coupee - Quebec")
+      .line("Saint-Damien - Quebec")
       .newline()
       .newline()
       .newline()
