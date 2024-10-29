@@ -361,10 +361,19 @@ app.get("/refresh", (req, res) => {
         console.error(`exec error: ${error}`);
         return res.status(500).json({ error: "Failed refresh server" });
       }
-      const currentSSID = stdout.trim();
-      res.json({ ssid: currentSSID });
+      res.json({ success: true });
     }
   );
+});
+
+app.get("/logs", (req, res) => {
+  exec("pm2 logs", (error, stdout, stderr) => {
+    if (error) {
+      console.error(`exec error: ${error}`);
+      return res.status(500).json({ error: "Failed to fetch logs" });
+    }
+    res.json({ stdout });
+  });
 });
 
 // @ts-ignore
