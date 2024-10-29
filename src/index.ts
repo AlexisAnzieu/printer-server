@@ -93,8 +93,8 @@ async function encodePrintData({ pictureUrl, texts, logoUrl }: PrintParams) {
             width: LOGO_WIDTH,
             height: LOGO_HEIGHT,
           }),
-          PICTURE_WIDTH,
-          PICTURE_HEIGHT,
+          LOGO_WIDTH,
+          LOGO_HEIGHT,
           "atkinson"
         )
         .newline();
