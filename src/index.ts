@@ -7,12 +7,18 @@ import * as usb from "usb";
 import { exec } from "child_process";
 import util from "util";
 import path from "path";
-import fs from "fs";
+
+type PrintParams = {
+  pictureUrl?: string;
+  texts?: string[];
+  logoUrl?: string;
+};
 
 const execCommand = util.promisify(exec);
 
 const app = express();
 app.use(express.urlencoded({ extended: true }));
+app.use(express.json());
 
 const port = 9100;
 const QR_CODE_URL = "https://flyprint.vercel.app/nath";
@@ -57,13 +63,7 @@ function initializePrinter() {
   }
 }
 
-async function encodePrintData({
-  pictureUrl,
-  texts,
-}: {
-  pictureUrl?: string;
-  texts?: string[];
-}) {
+async function encodePrintData({ pictureUrl, texts, logoUrl }: PrintParams) {
   const PICTURE_WIDTH = 528;
   const PICTURE_HEIGHT = 712;
   const LOGO_WIDTH = 200;
@@ -74,12 +74,6 @@ async function encodePrintData({
     createCanvas,
   });
   try {
-    const logo = await getImage({
-      pictureUrl:
-        "https://res.cloudinary.com/dkbuiehgq/image/upload/v1728693149/sask_esuiyh.jpg",
-      width: LOGO_WIDTH,
-      height: LOGO_HEIGHT,
-    });
     const date = new Date();
     const dateString = date.toLocaleString("en-GB", {
       day: "2-digit",
@@ -89,36 +83,46 @@ async function encodePrintData({
       minute: "2-digit",
     });
 
-    encoder = encoder
-      .initialize()
-      .align("center")
-      .image(logo, LOGO_WIDTH, LOGO_HEIGHT, "atkinson")
-      .newline();
+    encoder = encoder.initialize().align("center");
 
+    if (logoUrl) {
+      encoder = encoder
+        .image(
+          await getImage({
+            pictureUrl: logoUrl,
+            width: LOGO_WIDTH,
+            height: LOGO_HEIGHT,
+            rotate: 90,
+          }),
+          PICTURE_WIDTH,
+          PICTURE_HEIGHT,
+          "atkinson"
+        )
+        .newline();
+    }
     if (pictureUrl) {
-      const image = await getImage({
-        pictureUrl,
-        width: PICTURE_WIDTH,
-        height: PICTURE_HEIGHT,
-        rotate: 90,
-      });
-      encoder = encoder.image(image, PICTURE_WIDTH, PICTURE_HEIGHT, "atkinson");
-    } else if (texts) {
+      encoder = encoder.image(
+        await getImage({
+          pictureUrl,
+          width: PICTURE_WIDTH,
+          height: PICTURE_HEIGHT,
+          rotate: 90,
+        }),
+        PICTURE_WIDTH,
+        PICTURE_HEIGHT,
+        "atkinson"
+      );
+    }
+
+    if (texts) {
       texts.map((text) => encoder.line(text));
-    } else {
+    }
+
+    if (texts?.[0] === "qr") {
       encoder = encoder.qrcode(QR_CODE_URL, 2, 8, "h");
     }
 
-    return encoder
-      .newline()
-      .line(dateString)
-      .line("Saint-Damien - Quebec")
-      .newline()
-      .newline()
-      .newline()
-      .newline()
-      .cut()
-      .encode();
+    return encoder.newline().newline().newline().newline().cut().encode();
   } catch (err) {
     console.error("Failed to encode print data:", err);
     return null;
@@ -174,19 +178,13 @@ async function transferToEndpoint({
   });
 }
 
-async function printWithUSB({
-  pictureUrl,
-  texts,
-}: {
-  pictureUrl?: string;
-  texts?: string[];
-}) {
+async function printWithUSB({ pictureUrl, texts, logoUrl }: PrintParams) {
   const posPrinter = initializePrinter();
   if (!posPrinter) {
     throw new Error("Failed to initialize printer");
   }
 
-  let result = await encodePrintData({ pictureUrl, texts });
+  let result = await encodePrintData({ pictureUrl, texts, logoUrl });
   if (!result) {
     posPrinter.printer.close();
     throw new Error("Failed to encode print data");
@@ -298,31 +296,26 @@ async function printImage({
   method,
   pictureUrl,
   texts,
-}: {
-  method: string;
-  pictureUrl?: string;
-  texts?: string[];
-}) {
+  logoUrl,
+}: PrintParams & { method: "usb" | "lan" }) {
   if (method === "lan") {
     return await printWithLAN(pictureUrl);
   } else {
-    return await printWithUSB({ pictureUrl, texts });
+    return await printWithUSB({ pictureUrl, texts, logoUrl });
   }
 }
 
 app.post("/print", async (req, res) => {
   console.log("Printing");
 
-  const { pictureUrl, texts } = req.query as {
-    pictureUrl?: string;
-    texts?: string;
-  };
+  const { pictureUrl, texts, logoUrl } = req.body as PrintParams;
 
   try {
     const result = await printImage({
       method: "usb",
       pictureUrl,
-      texts: texts?.split(","),
+      texts,
+      logoUrl,
     });
     res.json({
       status: "success",
