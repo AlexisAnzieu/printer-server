@@ -353,6 +353,20 @@ app.get("/current_wifi", (req, res) => {
   );
 });
 
+app.get("/refresh", (req, res) => {
+  exec(
+    "cd /home/printer/printer-server && npm run refresh",
+    (error, stdout, stderr) => {
+      if (error) {
+        console.error(`exec error: ${error}`);
+        return res.status(500).json({ error: "Failed refresh server" });
+      }
+      const currentSSID = stdout.trim();
+      res.json({ ssid: currentSSID });
+    }
+  );
+});
+
 // @ts-ignore
 app.post("/update_wifi", async (req, res) => {
   console.log("Updating WiFi configuration");
