@@ -92,7 +92,6 @@ async function encodePrintData({ pictureUrl, texts, logoUrl }: PrintParams) {
             pictureUrl: logoUrl,
             width: LOGO_WIDTH,
             height: LOGO_HEIGHT,
-            rotate: 90,
           }),
           PICTURE_WIDTH,
           PICTURE_HEIGHT,
