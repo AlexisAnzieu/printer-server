@@ -108,18 +108,10 @@
           refreshButton.textContent = "Loading...";
           try {
             const response = await fetch("/refresh", { method: "GET" });
-            const data = await response.json();
-            if (data.success) {
-              alert("Printer configuration refreshed successfully.");
-            } else {
-              alert("Failed to refresh printer configuration.");
-            }
+            window.location.reload();
           } catch (error) {
             console.error("Failed to refresh printer configuration:", error);
             alert("Failed to refresh printer configuration.");
-          } finally {
-            refreshButton.disabled = false;
-            refreshButton.textContent = "Refresh";
           }
         });
 
