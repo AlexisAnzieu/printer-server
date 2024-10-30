@@ -361,7 +361,7 @@ app.get("/refresh", (req, res) => {
         console.error(`exec error: ${error}`);
         return res.status(500).json({ error: "Failed refresh server" });
       }
-      res.json({ success: true });
+      res.json({ sucess: true });
     }
   );
 });
