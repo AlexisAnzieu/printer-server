@@ -108,10 +108,8 @@
           refreshButton.textContent = "Loading...";
           try {
             const response = await fetch("/refresh", { method: "GET" });
+          } finally {
             window.location.reload();
-          } catch (error) {
-            console.error("Failed to refresh printer configuration:", error);
-            alert("Failed to refresh printer configuration.");
           }
         });
 
