@@ -368,12 +368,21 @@ app.get("/refresh", (req, res) => {
 });
 
 app.get("/logs", (req, res) => {
-  exec("pm2 logs", (error, stdout, stderr) => {
+  exec("pm2 logs --json", (error, stdout, stderr) => {
     if (error) {
       console.error(`exec error: ${error}`);
       return res.status(500).json({ error: "Failed to fetch logs" });
     }
-    res.json({ stdout });
+    try {
+      const logs = stdout
+        .split("\n")
+        .filter((line) => line)
+        .map((line) => JSON.parse(line));
+      res.json({ logs });
+    } catch (parseError) {
+      console.error(`parse error: ${parseError}`);
+      res.status(500).json({ error: "Failed to parse logs" });
+    }
   });
 });
 
