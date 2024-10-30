@@ -94,7 +94,8 @@
         .addEventListener("click", async () => {
           try {
             const response = await fetch("/refresh", { method: "GET" });
-            if (response.ok) {
+            const data = await response.json();
+            if (data.success) {
               alert("Printer configuration refreshed successfully.");
             } else {
               alert("Failed to refresh printer configuration.");
