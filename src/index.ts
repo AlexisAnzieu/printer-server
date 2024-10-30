@@ -7,6 +7,7 @@ import * as usb from "usb";
 import { exec } from "child_process";
 import util from "util";
 import path from "path";
+import fs from "fs";
 
 type PrintParams = {
   pictureUrl?: string;
@@ -397,6 +398,17 @@ app.post("/update_wifi", async (req, res) => {
 });
 
 app.use("/", express.static(path.join(__dirname, "../public")));
+
+app.get("/version", (req, res) => {
+  fs.readFile(path.join(__dirname, "../package.json"), "utf8", (err, data) => {
+    if (err) {
+      res.status(500).send({ error: "Failed to read version" });
+      return;
+    }
+    const packageJson = JSON.parse(data);
+    res.send({ version: packageJson.version });
+  });
+});
 
 app.listen(port, () => {
   console.log(`Printer server running on port ${port}`);
