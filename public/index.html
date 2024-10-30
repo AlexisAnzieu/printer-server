@@ -4,6 +4,16 @@
     <title>Printer WiFi Config</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link href="tailwind.min.css" rel="stylesheet" />
+    <style>
+      #logs {
+        white-space: pre-wrap;
+        background-color: #f4f4f4;
+        padding: 10px;
+        border: 1px solid #ddd;
+        max-height: 300px;
+        overflow-y: auto;
+      }
+    </style>
   </head>
   <body
     class="bg-gray-100 flex flex-col items-center justify-center min-h-screen p-4 gap-6"
@@ -58,6 +68,8 @@
       </button>
     </div>
     <div id="version" class="text-gray-500 text-sm mt-4"></div>
+    <h2>Logs</h2>
+    <div id="logs">Loading logs...</div>
     <script>
       async function fetchWiFiNetworks() {
         try {
@@ -118,6 +130,19 @@
       }
 
       fetchVersion();
+
+      async function fetchLogs() {
+        try {
+          const response = await fetch("/logs");
+          const logs = await response.json();
+          document.getElementById("logs").textContent = logs.join("\n");
+        } catch (error) {
+          document.getElementById("logs").textContent = "Failed to load logs";
+          console.error("Failed to fetch logs:", error);
+        }
+      }
+
+      fetchLogs();
     </script>
   </body>
 </html>

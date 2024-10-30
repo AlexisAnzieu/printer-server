@@ -375,7 +375,7 @@ app.get("/logs", (req, res) => {
     }
     try {
       const logs = stdout.split("\n");
-      res.json({ logs });
+      res.json(logs);
     } catch (parseError) {
       console.error(`parse error: ${parseError}`);
       res.status(500).json({ error: "Failed to parse logs" });
