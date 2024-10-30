@@ -368,19 +368,13 @@ app.get("/refresh", (req, res) => {
 });
 
 app.get("/logs", (req, res) => {
-  exec("pm2 logs --lines 15", (error, stdout, stderr) => {
+  exec(" pm2 logs 0 --lines 15 --raw  --nostream", (error, stdout, stderr) => {
     if (error) {
       console.error(`exec error: ${error}`);
       return res.status(500).json({ error: "Failed to fetch logs" });
     }
     try {
-      const logs = stdout
-        .split("\n")
-        .filter((line) => line)
-        .map((line) => {
-          const log = JSON.parse(line);
-          return log.message.replace(/^0\|index\s+\|\s+/, "");
-        });
+      const logs = stdout.split("\n");
       res.json({ logs });
     } catch (parseError) {
       console.error(`parse error: ${parseError}`);
