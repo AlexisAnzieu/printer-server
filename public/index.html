@@ -109,6 +109,7 @@
           try {
             const response = await fetch("/refresh", { method: "GET" });
           } finally {
+            await new Promise((resolve) => setTimeout(resolve, 3000));
             window.location.reload();
           }
         });
