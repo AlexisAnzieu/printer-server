@@ -75,15 +75,6 @@ async function encodePrintData({ pictureUrl, texts, logoUrl }: PrintParams) {
     createCanvas,
   });
   try {
-    const date = new Date();
-    const dateString = date.toLocaleString("en-GB", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-
     encoder = encoder.initialize().align("center");
 
     if (logoUrl) {
@@ -153,19 +144,19 @@ function claimInterface(iface: usb.Interface) {
 
 async function transferToEndpoint({
   posPrinter,
-  result,
+  data,
 }: {
   posPrinter: {
     endpoint: usb.OutEndpoint;
     iface: usb.Interface;
     printer: usb.usb.Device;
   };
-  result: Uint8Array;
+  data: Uint8Array;
 }) {
   console.log("Printing...");
 
   return new Promise((resolve, reject) => {
-    posPrinter.endpoint.transfer(result as Buffer, (error: any) => {
+    posPrinter.endpoint.transfer(data as Buffer, (error: any) => {
       if (error) {
         console.error("Print failed", error);
         reject("Print failed");
@@ -190,7 +181,7 @@ async function printWithUSB({ pictureUrl, texts, logoUrl }: PrintParams) {
     throw new Error("Failed to encode print data");
   }
 
-  return await transferToEndpoint({ posPrinter, result });
+  return await transferToEndpoint({ posPrinter, data: result });
 }
 
 async function updateWifiConfig(ssid: any, psk: any) {
@@ -305,6 +296,15 @@ async function printImage({
   }
 }
 
+async function printRawData(data: Uint8Array) {
+  const posPrinter = initializePrinter();
+  if (!posPrinter) {
+    throw new Error("Failed to initialize printer");
+  }
+
+  return await transferToEndpoint({ posPrinter, data });
+}
+
 app.post("/print", async (req, res) => {
   console.log("Printing");
 
@@ -320,6 +320,26 @@ app.post("/print", async (req, res) => {
     res.json({
       status: "success",
       message: "Print job completed successfully",
+      result: result,
+    });
+  } catch (error: any) {
+    res.status(500).json({
+      status: "error",
+      message: error.message,
+    });
+  }
+});
+
+app.post("raw-print", async (req, res) => {
+  console.log("Printing raw data");
+
+  const { data } = req.body;
+
+  try {
+    const result = await printRawData(data);
+    res.json({
+      status: "success",
+      message: "Raw print job completed successfully",
       result: result,
     });
   } catch (error: any) {
