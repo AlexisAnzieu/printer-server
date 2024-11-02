@@ -297,7 +297,6 @@ async function printImage({
 }
 
 async function printRawData(data: Uint8Array) {
-  console.log(data);
   const posPrinter = initializePrinter();
   if (!posPrinter) {
     throw new Error("Failed to initialize printer");
@@ -333,6 +332,8 @@ app.post("/print", async (req, res) => {
 
 app.post("/raw-print", async (req, res) => {
   console.log("Printing raw data");
+
+  console.log(req.body);
 
   const { data } = req.body;
 
