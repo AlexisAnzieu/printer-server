@@ -8,6 +8,7 @@ import { exec } from "child_process";
 import util from "util";
 import path from "path";
 import fs from "fs";
+import { handleRawPrint } from "./handlers/rawPrint";
 
 type PrintParams = {
   pictureUrl?: string;
@@ -296,7 +297,7 @@ async function printImage({
   }
 }
 
-async function printRawData(data: Buffer) {
+export async function printRawData(data: Buffer) {
   const posPrinter = initializePrinter();
   if (!posPrinter) {
     throw new Error("Failed to initialize printer");
@@ -330,31 +331,7 @@ app.post("/print", async (req, res) => {
   }
 });
 
-app.post("/raw-print", async (req, res) => {
-  console.log("Printing raw data");
-
-  try {
-    let data: any = [];
-    req.on("data", (chunk) => {
-      data.push(chunk);
-    });
-    req.on("end", async () => {
-      const buffer = Buffer.concat(data);
-      const result = await printRawData(buffer);
-      res.json({
-        status: "success",
-        message: "Raw print job completed successfully",
-        result: result,
-      });
-    });
-  } catch (error: any) {
-    console.log("Error", error);
-    res.status(500).json({
-      status: "error",
-      message: error.message,
-    });
-  }
-});
+app.post("/raw-print", handleRawPrint);
 
 app.get("/scan_wifi", async (req, res) => {
   try {
