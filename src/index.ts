@@ -330,7 +330,7 @@ app.post("/print", async (req, res) => {
   }
 });
 
-app.post("raw-print", async (req, res) => {
+app.post("/raw-print", async (req, res) => {
   console.log("Printing raw data");
 
   const { data } = req.body;
