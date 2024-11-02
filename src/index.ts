@@ -296,7 +296,7 @@ async function printImage({
   }
 }
 
-async function printRawData(data: Uint8Array) {
+async function printRawData(data: Buffer) {
   const posPrinter = initializePrinter();
   if (!posPrinter) {
     throw new Error("Failed to initialize printer");
@@ -348,6 +348,7 @@ app.post("/raw-print", async (req, res) => {
       });
     });
   } catch (error: any) {
+    console.log("Error", error);
     res.status(500).json({
       status: "error",
       message: error.message,
