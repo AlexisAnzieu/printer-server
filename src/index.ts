@@ -333,16 +333,19 @@ app.post("/print", async (req, res) => {
 app.post("/raw-print", async (req, res) => {
   console.log("Printing raw data");
 
-  console.log(req.body);
-
-  const { data } = req.body;
-
   try {
-    const result = await printRawData(data);
-    res.json({
-      status: "success",
-      message: "Raw print job completed successfully",
-      result: result,
+    let data: any = [];
+    req.on("data", (chunk) => {
+      data.push(chunk);
+    });
+    req.on("end", async () => {
+      const buffer = Buffer.concat(data);
+      const result = await printRawData(buffer);
+      res.json({
+        status: "success",
+        message: "Raw print job completed successfully",
+        result: result,
+      });
     });
   } catch (error: any) {
     res.status(500).json({
